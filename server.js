@@ -11,7 +11,7 @@ let totalConnections = 0;
 const startTime = Date.now();
 
 // Try to load the game file (minecraft.html must be in same folder as server.js)
-const GAME_FILE = path.join(__dirname, 'minecraft.html');
+const GAME_FILE = path.join(__dirname, 'index.html');
 function serveGame(res) {
   if (fs.existsSync(GAME_FILE)) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
