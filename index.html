@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>VoxelCraft</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none;}
+canvas{display:block;position:fixed;inset:0;}
+
+/* ─── MENU ─── */
+#menubg{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% 30%,#0c1a0c,#040a04);overflow:hidden;}
+#menubg::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(76,175,80,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(76,175,80,0.04) 1px,transparent 1px);
+  background-size:44px 44px;animation:gmov 10s linear infinite;}
+@keyframes gmov{to{background-position:44px 44px;}}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:200;}
+#mainmenu{justify-content:flex-start;padding-top:28px;overflow-y:auto;}
+.logo{font-size:48px;color:#4CAF50;text-shadow:4px 4px 0 #1b5e20,0 0 80px rgba(76,175,80,0.2);letter-spacing:5px;margin-bottom:2px;margin-top:8px;}
+.tagline{font-size:9px;color:#2a5e2a;letter-spacing:6px;margin-bottom:20px;}
+.tabbar{display:flex;width:480px;border-bottom:1px solid #152015;}
+.tab{flex:1;padding:10px 0;background:transparent;border:none;color:#2a4a2a;font-family:inherit;font-size:10px;letter-spacing:2px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tab:hover{color:#4CAF50;}.tab.on{color:#4CAF50;border-bottom-color:#4CAF50;}
+.tp{width:480px;background:rgba(0,0,0,0.65);border:1px solid #0e1e0e;border-top:none;padding:16px;display:none;min-height:280px;}
+.tp.on{display:block;}
+.wlist{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow-y:auto;margin-bottom:10px;scrollbar-width:thin;scrollbar-color:#1e3e1e #050e05;}
+.wcard{display:flex;align-items:center;gap:8px;background:#07100a;border:1px solid #0e1e10;padding:9px 12px;cursor:pointer;transition:all 0.1s;}
+.wcard:hover,.wcard.last{border-color:#2e7d32;}.wcard.last .wname2::after{content:' ●';color:#4CAF50;}
+.wico{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#0a150a;border:1px solid #0e1e0e;}
+.wmeta{flex:1;}.wname2{font-size:13px;color:#a5d6a7;letter-spacing:1px;}.wdate{font-size:9px;color:#1e3e1e;margin-top:2px;}
+.wbtns{display:flex;gap:3px;}
+.mb{padding:4px 9px;font-family:inherit;font-size:9px;cursor:pointer;border:1px solid;letter-spacing:1px;transition:all 0.1s;}
+.mb.g{background:rgba(27,94,32,0.4);border-color:#1b5e20;color:#81c784;}.mb.g:hover{background:rgba(46,125,50,0.65);}
+.mb.r{background:rgba(80,0,0,0.3);border-color:#5a0000;color:#ef9a9a;}.mb.r:hover{background:rgba(120,0,0,0.5);}
+.mb.d{background:#050d05;border-color:#0e1e0e;color:#2a4a2a;}.mb.d:hover{border-color:#1b3e1b;color:#3a6a3a;}
+.empty-w{color:#1a3a1a;font-size:11px;text-align:center;padding:30px;border:1px dashed #0a1a0a;}
+.brow{display:flex;gap:6px;margin-top:8px;}
+.fi{width:100%;padding:7px 12px;background:#040d04;border:1px solid #0e1e0e;color:#a5d6a7;font-family:inherit;font-size:12px;outline:none;margin-bottom:7px;letter-spacing:1px;}
+.fi:focus{border-color:#2e7d32;}.fi::placeholder{color:#1a3a1a;}
+.sdlbl{font-size:8px;color:#1a3a1a;letter-spacing:3px;border-top:1px solid #0a1a0a;padding-top:9px;margin-bottom:9px;}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:11px;}
+.slbl{width:160px;font-size:9px;color:#2a5a2a;letter-spacing:1px;flex-shrink:0;}
+.sval{min-width:32px;text-align:right;font-size:9px;color:#4CAF50;}
+input[type=range]{flex:1;accent-color:#4CAF50;}
+.tg2{display:flex;gap:2px;}.tgb{padding:4px 12px;font-family:inherit;font-size:9px;cursor:pointer;border:1px solid #0e1e0e;color:#2a4a2a;background:#050d05;letter-spacing:1px;}
+.tgb.on{background:#1b5e20;color:#a5d6a7;border-color:#2e7d32;}
+.mp-tabs{display:flex;gap:2px;margin-bottom:12px;}
+.mpt{flex:1;padding:6px 0;background:#060e06;border:1px solid #0e1e0e;color:#1a3a1a;font-family:inherit;font-size:9px;letter-spacing:2px;cursor:pointer;text-align:center;}
+.mpt.on{background:#0a1a0a;color:#4CAF50;border-color:#1b5e20;}
+.mp-p{display:none;}.mp-p.on{display:block;}
+.pid{background:#050e05;border:1px solid #0d3a8a;color:#5ba3e8;font-size:16px;letter-spacing:4px;padding:9px;text-align:center;margin:6px 0;cursor:copy;}
+.srv-row{display:flex;align-items:center;gap:6px;background:#050d05;border:1px solid #0e1e0e;padding:7px 10px;margin-bottom:3px;cursor:pointer;}
+.srv-row:hover{border-color:#1a3a1a;}.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sn{flex:1;font-size:11px;color:#81c784;}.stu{font-size:8px;color:#1a4a1a;}
+
+/* ─── SCREENS ─── */
+#nwscr,#pause,#invscr{background:rgba(3,8,3,0.97);}
+#nwscr h2,#invscr h3{color:#4CAF50;font-size:20px;letter-spacing:3px;margin-bottom:18px;}
+#pause h2{color:#eee;font-size:24px;letter-spacing:5px;}
+.pause-btns{display:flex;flex-direction:column;gap:7px;margin-top:18px;width:190px;}
+
+/* ─── INVENTORY ─── */
+#invscr{justify-content:center;}
+.inv-lbl{color:#1a3a1a;font-size:8px;letter-spacing:3px;margin-bottom:3px;width:100%;max-width:436px;text-align:left;}
+.igrid{display:grid;grid-template-columns:repeat(9,46px);gap:2px;margin-bottom:3px;}
+.isl{width:46px;height:46px;border:1px solid #101810;background:#060e06;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;box-shadow:inset -2px -2px 0 rgba(0,0,0,0.6),inset 1px 1px 0 rgba(255,255,255,0.04);}
+.isl:hover{border-color:#1b3e1b;}.isl.ia{border-color:#4CAF50;}.isl.drag-over{border-color:#fff;background:#1a2a1a;}
+.ic{width:28px;height:28px;position:relative;overflow:hidden;flex-shrink:0;}
+.ict{position:absolute;inset:0;}.ics{position:absolute;right:0;bottom:0;width:40%;height:100%;opacity:0.5;}
+.icn{position:absolute;bottom:1px;right:2px;font-size:8px;color:#fff;text-shadow:1px 1px #000;font-weight:bold;}
+.irot{position:absolute;top:1px;left:2px;font-size:7px;color:#4CAF50;opacity:0.7;}
+
+/* ─── HUD ─── */
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;color:rgba(255,255,255,0.75);pointer-events:none;z-index:10;text-shadow:0 0 4px #000;display:none;}
+#hud{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:3px;z-index:20;}
+#hearts{display:flex;gap:1px;height:16px;align-items:center;}
+.ht{font-size:13px;line-height:1;}.ht.f{color:#e53935;}.ht.h{color:#e53935;opacity:0.4;}.ht.e{color:#161616;}
+.hotbar{display:flex;gap:2px;background:rgba(0,0,0,0.78);border:2px solid #1e1e1e;padding:3px;}
+.hsl{width:50px;height:50px;border:2px solid #1a1a1a;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;box-shadow:inset -2px -2px 0 rgba(0,0,0,0.55),inset 2px 2px 0 rgba(255,255,255,0.04);}
+.hsl.on{border-color:#ccc;background:#141414;}
+.bic{width:32px;height:32px;position:relative;overflow:hidden;flex-shrink:0;}
+.bt{position:absolute;inset:0;}.bs{position:absolute;right:0;bottom:0;width:40%;height:100%;opacity:0.5;}.bhi{position:absolute;top:0;left:0;right:0;height:28%;background:rgba(255,255,255,0.1);}
+.bn{font-size:6px;color:#333;text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;max-width:46px;}
+.bc{position:absolute;bottom:13px;right:2px;font-size:9px;color:#fff;text-shadow:1px 1px #000;font-weight:bold;}
+.brot{position:absolute;top:1px;left:2px;font-size:6px;color:#4CAF50;opacity:0.65;}
+#info{position:fixed;top:8px;left:10px;color:#fff;font-size:11px;background:rgba(0,0,0,0.65);padding:6px 11px;display:none;line-height:1.9;z-index:15;text-shadow:1px 1px 2px #000;}
+#tlabel{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);color:#fff;font-size:11px;background:rgba(0,0,0,0.72);padding:3px 14px;display:none;z-index:15;white-space:nowrap;}
+#uwfx{position:fixed;inset:0;background:rgba(8,30,90,0.52);display:none;pointer-events:none;z-index:8;animation:uwp 2.5s ease-in-out infinite;}
+@keyframes uwp{0%,100%{opacity:0.4;}50%{opacity:0.6;}}
+#dmgfx{position:fixed;inset:0;pointer-events:none;z-index:9;transition:background 0.4s;}
+#msg{position:fixed;top:43%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:13px;background:rgba(0,0,0,0.8);padding:6px 20px;display:none;z-index:30;border:1px solid #1a2a1a;}
+#eff-hud{position:fixed;top:9px;right:11px;display:none;flex-direction:column;gap:3px;z-index:15;}
+.efb{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.7);border:1px solid #1a3a1a;padding:3px 8px;font-size:9px;color:#c8e6c9;}
+.ed{width:7px;height:7px;border-radius:50%;}
+#wind-hud{position:fixed;top:8px;left:50%;transform:translateX(-50%);color:rgba(76,175,80,0.55);font-size:9px;display:none;z-index:15;letter-spacing:2px;}
+#tplbl{position:fixed;top:8px;left:50%;transform:translateX(-50%);margin-top:20px;color:rgba(255,255,255,0.35);font-size:9px;display:none;z-index:14;}
+#mode-badge{position:fixed;top:8px;right:11px;font-size:8px;letter-spacing:2px;display:none;z-index:15;padding:3px 8px;border:1px solid;}
+#mode-badge.survival{color:#ef9a9a;border-color:#4a1a1a;background:rgba(20,5,5,0.7);}
+#mode-badge.creative{color:#81d4fa;border-color:#1a3a5a;background:rgba(5,15,25,0.7);}
+#mp-badge{position:fixed;top:32px;right:11px;display:none;font-size:8px;color:#4CAF50;letter-spacing:1px;z-index:15;}
+#keyhints{position:fixed;bottom:94px;right:9px;color:rgba(255,255,255,0.28);font-size:8px;display:none;line-height:2;z-index:15;text-align:right;}
+#nametag{position:fixed;pointer-events:none;z-index:12;display:none;transform:translateX(-50%);color:#fff;font-size:9px;background:rgba(0,0,0,0.65);padding:2px 7px;}
+
+/* ─── ENGINE UI ─── */
+#eng-hud{position:fixed;bottom:88px;left:14px;display:none;z-index:20;flex-direction:column;gap:3px;}
+.eng-row{display:flex;align-items:center;gap:6px;font-size:9px;color:#888;}
+.eng-bar-bg{width:80px;height:6px;background:#111;border:1px solid #222;}
+.eng-bar{height:100%;transition:width 0.3s;}
+
+/* ─── CHAT ─── */
+#chat-wrap{position:fixed;bottom:136px;left:12px;width:260px;max-height:130px;overflow-y:auto;display:none;z-index:15;flex-direction:column;gap:2px;}
+.cline{font-size:10px;color:#aaa;background:rgba(0,0,0,0.6);padding:2px 7px;}
+.cw{color:#4CAF50;}
+#chat-inp-w{position:fixed;bottom:116px;left:12px;display:none;z-index:20;}
+#chat-inp{width:250px;padding:5px 9px;background:rgba(0,0,0,0.9);border:1px solid #2a4a2a;color:#fff;font-family:inherit;font-size:10px;outline:none;}
+
+/* ─── PLAYER LIST ─── */
+#plist-ov{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(4,10,4,0.97);border:1px solid #1b5e20;min-width:240px;padding:14px 18px;z-index:50;display:none;pointer-events:none;}
+#plist-ov h4{color:#2a5a2a;font-size:8px;letter-spacing:4px;margin-bottom:8px;}
+.pl-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #080f08;font-size:11px;color:#a5d6a7;}
+.pld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+/* ─── ENGINE TAB ─── */
+.en-stab{padding:9px 10px;font-size:8px;letter-spacing:2px;color:#1a3a1a;cursor:pointer;border-left:2px solid transparent;transition:all 0.1s;}
+.en-stab:hover{color:#4CAF50;background:rgba(76,175,80,0.05);}
+.en-stab.on{color:#f57f17;border-left-color:#f57f17;background:rgba(245,127,23,0.05);}
+.en-panel{display:none;}.en-panel.on{display:block;}
+.en-lbl{font-size:10px;color:#f57f17;letter-spacing:2px;margin-bottom:6px;border-bottom:1px solid #0a1a0a;padding-bottom:5px;}
+.perm-flag{display:flex;align-items:center;gap:8px;font-size:9px;color:#2a5a2a;}
+.perm-flag input[type=checkbox]{accent-color:#f57f17;}
+.blk-row{display:flex;align-items:center;gap:6px;background:#050d05;border:1px solid #0a1a0a;padding:5px 8px;font-size:9px;}
+.blk-swatch{width:20px;height:20px;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
+.blk-nm{flex:1;color:#a5d6a7;}.blk-id{color:#1a3a1a;font-size:8px;}
+.cit-row{display:flex;align-items:center;gap:6px;background:#050d05;border:1px solid #0a1a0a;padding:4px 8px;font-size:9px;}
+.cit-sw{width:16px;height:16px;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
+.ppl-row{display:flex;align-items:center;gap:6px;background:#050d05;border:1px solid #0a1a0a;padding:4px 8px;margin-bottom:2px;font-size:9px;}
+.ppl-nm{flex:1;color:#a5d6a7;}.ppl-role{color:#f57f17;font-size:8px;}
+
+/* ─── SERVER MANAGER ─── */
+.srv-card{background:#060e06;border:1px solid #0e1e0e;padding:10px 12px;margin-bottom:5px;cursor:pointer;transition:all 0.12s;}
+.srv-card:hover{border-color:#1e3e1e;background:#080f08;}
+.srv-card.active{border-color:#4CAF50;}
+.srv-title{font-size:13px;color:#a5d6a7;letter-spacing:1px;}
+.srv-meta{font-size:9px;color:#1a3a1a;margin-top:2px;}
+.srv-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;}
+.srv-detail{background:#040d04;border:1px solid #0a1a0a;padding:12px;margin-top:8px;display:none;}
+.srv-detail.show{display:block;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.stat-box{background:#050d05;border:1px solid #0a1a0a;padding:8px;text-align:center;}
+.stat-num{font-size:18px;color:#4CAF50;font-weight:bold;}
+.stat-lbl{font-size:8px;color:#1a3a1a;letter-spacing:2px;margin-top:2px;}
+.mp-stab2{display:flex;gap:2px;margin-bottom:10px;}
+.mpt2{flex:1;padding:6px 0;background:#050d05;border:1px solid #0a1a0a;color:#1a3a1a;font-family:inherit;font-size:9px;letter-spacing:2px;cursor:pointer;text-align:center;}
+.mpt2.on{background:#0a1a0a;color:#4CAF50;border-color:#1b5e20;}
+.mp2p{display:none;}.mp2p.on{display:block;}
+
+/* ─── WORLD PREVIEW ─── */
+.wcard-preview{display:flex;gap:10px;align-items:stretch;}
+.wpreview-canvas{width:64px;height:64px;flex-shrink:0;border:1px solid #0e1e0e;image-rendering:pixelated;}
+.wcard-info{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
+.wstats{font-size:8px;color:#1a3a2a;line-height:1.8;}
+
+/* ─── ACCOUNT TAB ─── */
+.acc-avatar{width:60px;height:60px;border-radius:50%;border:2px solid #1b5e20;display:flex;align-items:center;justify-content:center;font-size:22px;background:#0a1a0a;margin:0 auto 12px;}
+.acc-name{text-align:center;font-size:16px;color:#a5d6a7;letter-spacing:2px;margin-bottom:4px;}
+.acc-badge{text-align:center;font-size:8px;color:#1b5e20;letter-spacing:3px;margin-bottom:14px;}
+.acc-stat{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #0a1a0a;font-size:10px;}
+.acc-sk{color:#1a3a1a;}.acc-sv{color:#a5d6a7;}
+.auth-tab{display:flex;gap:2px;margin-bottom:12px;}
+.atb{flex:1;padding:7px;background:#050d05;border:1px solid #0a1a0a;color:#1a3a1a;font-family:inherit;font-size:9px;letter-spacing:2px;cursor:pointer;text-align:center;}
+.atb.on{background:#0a1a0a;color:#4CAF50;border-color:#1b5e20;}
+
+/* ─── FRIENDS TAB ─── */
+.fr-tabs{display:flex;gap:2px;margin-bottom:10px;}
+.frt{flex:1;padding:6px;background:#050d05;border:1px solid #0a1a0a;color:#1a3a1a;font-family:inherit;font-size:9px;letter-spacing:2px;cursor:pointer;text-align:center;}
+.frt.on{background:#0a1a0a;color:#4CAF50;border-color:#1b5e20;}
+.fr-p{display:none;}.fr-p.on{display:block;}
+.fr-row{display:flex;align-items:center;gap:8px;background:#050d05;border:1px solid #0a1a0a;padding:7px 10px;margin-bottom:3px;}
+.fr-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.fr-nm{flex:1;font-size:11px;color:#a5d6a7;}
+.fr-st{font-size:8px;color:#1a3a1a;}
+.fr-online{color:#4CAF50;}
+.dm-thread{background:#040d04;border:1px solid #0a1a0a;height:150px;overflow-y:auto;padding:8px;margin-bottom:6px;}
+.dm-msg{font-size:9px;margin-bottom:5px;line-height:1.5;}
+.dm-mine{text-align:right;color:#a5d6a7;}
+.dm-them{color:#888;}
+.dm-who{font-size:8px;color:#2a5a2a;margin-bottom:1px;}
+</style>
+</head>
+<body>
+<div id="menubg"></div>
+
+<!-- MAIN MENU -->
+<div id="mainmenu" class="screen">
+  <div class="logo">VOXELCRAFT</div>
+  <div class="tagline">SURVIVAL · CREATIVE · MULTIPLAYER</div>
+  <div class="tabbar" style="width:540px;">
+    <button class="tab on"  onclick="switchTab('sp')">WORLDS</button>
+    <button class="tab"     onclick="switchTab('sv')">SERVERS</button>
+    <button class="tab"     onclick="switchTab('fr')">FRIENDS</button>
+    <button class="tab"     onclick="switchTab('ac')">ACCOUNT</button>
+    <button class="tab"     onclick="switchTab('st')">SETTINGS</button>
+    <button class="tab"     onclick="switchTab('en')" style="color:#f57f17;">ENGINE</button>
+  </div>
+
+  <!-- ── WORLDS ── -->
+  <div class="tp on" id="tab-sp" style="width:540px;">
+    <div id="continue-wrap" style="display:none;margin-bottom:8px;">
+      <button class="mb g" id="continue-btn" style="width:100%;padding:7px;font-size:11px;letter-spacing:2px;"></button>
+    </div>
+    <div class="wlist" id="wlist"></div>
+    <div class="brow">
+      <button class="mb g" onclick="showNewWorld()">+ New World</button>
+    </div>
+    <!-- World Preview Panel -->
+    <div id="world-preview-panel" style="display:none;margin-top:10px;background:#040d04;border:1px solid #0a1a0a;padding:10px;">
+      <div style="font-size:9px;color:#f57f17;letter-spacing:2px;margin-bottom:8px;">WORLD PREVIEW</div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <canvas id="preview-canvas" width="96" height="96" style="border:1px solid #0e1e0e;image-rendering:pixelated;flex-shrink:0;"></canvas>
+        <div id="preview-info" style="flex:1;font-size:9px;line-height:2;color:#2a5a2a;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SERVERS (new full manager) ── -->
+  <div class="tp" id="tab-sv" style="width:540px;">
+    <div class="mp-stab2">
+      <div class="mpt2 on" onclick="svTab('my',this)">MY SERVERS</div>
+      <div class="mpt2"    onclick="svTab('join',this)">JOIN SERVER</div>
+      <div class="mpt2"    onclick="svTab('p2p',this)">PEER-TO-PEER</div>
+      <div class="mpt2"    onclick="svTab('host',this)">HOSTING GUIDE</div>
+    </div>
+
+    <div class="mp2p on" id="sv-my">
+      <div id="my-srv-list" style="max-height:180px;overflow-y:auto;margin-bottom:8px;"></div>
+      <div class="brow">
+        <button class="mb g" onclick="showCreateSrv()">+ Create Server Config</button>
+      </div>
+      <div id="create-srv-form" style="display:none;background:#040d04;border:1px solid #0a1a0a;padding:10px;margin-top:8px;">
+        <div style="font-size:9px;color:#4CAF50;letter-spacing:2px;margin-bottom:8px;">NEW SERVER</div>
+        <input id="nsrv-name" class="fi" placeholder="Server name" spellcheck="false">
+        <input id="nsrv-url"  class="fi" placeholder="ws://host:8080" spellcheck="false">
+        <input id="nsrv-desc" class="fi" placeholder="Description (optional)" spellcheck="false">
+        <div class="srow">
+          <span class="slbl" style="font-size:9px;width:120px;">Max Players</span>
+          <input id="nsrv-maxp" class="fi" style="margin:0;width:60px;" value="20">
+        </div>
+        <div class="srow">
+          <span class="slbl" style="font-size:9px;width:120px;">Password</span>
+          <input id="nsrv-pw" class="fi" style="margin:0;flex:1;" type="password" placeholder="Optional">
+        </div>
+        <div class="brow">
+          <button class="mb g" onclick="saveNewSrv()">Save</button>
+          <button class="mb d" onclick="document.getElementById('create-srv-form').style.display='none'">Cancel</button>
+        </div>
+      </div>
+      <!-- Selected server detail -->
+      <div id="srv-detail" class="srv-detail">
+        <div id="srv-detail-inner"></div>
+      </div>
+    </div>
+
+    <div class="mp2p" id="sv-join">
+      <div class="sdlbl">SAVED SERVERS</div>
+      <div id="srvlist"></div>
+      <div class="sdlbl" style="margin-top:8px;">DIRECT CONNECT</div>
+      <input id="srv-url"  class="fi" placeholder="ws://hostname:8080" spellcheck="false">
+      <input id="srv-name" class="fi" placeholder="Server name (optional)" spellcheck="false">
+      <div class="brow">
+        <button class="mb g" onclick="connectWS()">Connect</button>
+        <button class="mb d" onclick="saveServer()">Save</button>
+      </div>
+    </div>
+
+    <div class="mp2p" id="sv-p2p">
+      <div class="sdlbl">YOUR PEER ID (share with friends)</div>
+      <div class="pid" id="peer-id-box" onclick="copyPeerId()">Initializing…</div>
+      <div style="font-size:8px;color:#1a3a5a;letter-spacing:2px;text-align:center;margin-bottom:8px;">CLICK TO COPY · Works peer-to-peer, no server needed</div>
+      <div class="sdlbl">JOIN A PEER</div>
+      <input id="peer-join" class="fi" placeholder="Paste friend's Peer ID" spellcheck="false">
+      <button class="mb g" onclick="joinPeer()">Join</button>
+      <div style="font-size:8px;color:#1a3a1a;margin-top:8px;line-height:1.8;">
+        P2P works directly between browsers using WebRTC.<br>
+        Both players must have the game open at the same time.<br>
+        No server or port-forwarding required.
+      </div>
+    </div>
+
+    <div class="mp2p" id="sv-host">
+      <div style="font-size:9px;color:#4CAF50;letter-spacing:2px;margin-bottom:10px;">LIFETIME MULTIPLAYER SETUP</div>
+      <div style="font-size:9px;color:#2a5a2a;line-height:2;margin-bottom:10px;">
+        To run a permanent server your friends can always join:<br>
+        <span style="color:#a5d6a7">Option 1 — Free (Render.com)</span><br>
+        1. Create account at render.com<br>
+        2. New → Web Service → paste the server code (ENGINE → SERVER tab)<br>
+        3. Set start command: <span style="color:#f57f17;">node server.js</span><br>
+        4. Get your <span style="color:#f57f17;">wss://yourapp.onrender.com</span> URL — share it!<br><br>
+        <span style="color:#a5d6a7">Option 2 — Glitch.com (always-on free)</span><br>
+        1. glitch.com → New Project → paste server code<br>
+        2. Your URL: <span style="color:#f57f17;">wss://yourproject.glitch.me</span><br><br>
+        <span style="color:#a5d6a7">Option 3 — Your own machine</span><br>
+        1. Run server.js locally (node server.js)<br>
+        2. Use ngrok: <span style="color:#f57f17;">ngrok tcp 8080</span> → share the URL<br>
+        3. For truly permanent: forward port 8080 in router settings<br><br>
+        <span style="color:#a5d6a7">wss:// vs ws://</span><br>
+        Use <span style="color:#f57f17;">wss://</span> (secure) when your game is served over HTTPS.
+      </div>
+      <button class="mb d" style="font-size:9px;" onclick="copySrvCode()">Copy Server Code</button>
+    </div>
+  </div>
+
+  <!-- ── FRIENDS ── -->
+  <div class="tp" id="tab-fr" style="width:540px;">
+    <div class="fr-tabs">
+      <div class="frt on" onclick="frTab('list',this)">FRIENDS</div>
+      <div class="frt"    onclick="frTab('req',this)">REQUESTS</div>
+      <div class="frt"    onclick="frTab('dm',this)">MESSAGES</div>
+      <div class="frt"    onclick="frTab('online',this)">ONLINE</div>
+    </div>
+
+    <div class="fr-p on" id="fr-list">
+      <div id="fr-list-el" style="max-height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:4px;">
+        <input id="fr-add-inp" class="fi" style="margin:0;flex:1;" placeholder="Add friend by username…" spellcheck="false">
+        <button class="mb g" onclick="addFriend()">Add</button>
+      </div>
+    </div>
+
+    <div class="fr-p" id="fr-req">
+      <div id="fr-req-el" style="max-height:200px;overflow-y:auto;"></div>
+      <div style="font-size:8px;color:#1a3a1a;margin-top:6px;">
+        Friend requests are stored locally. For cross-device sync,<br>connect to a WebSocket server — requests sync automatically.
+      </div>
+    </div>
+
+    <div class="fr-p" id="fr-dm">
+      <div class="sdlbl">CONVERSATION WITH</div>
+      <div id="dm-friend-list" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;"></div>
+      <div id="dm-thread" class="dm-thread"></div>
+      <div style="display:flex;gap:4px;">
+        <input id="dm-inp" class="fi" style="margin:0;flex:1;" placeholder="Type a message…" spellcheck="false">
+        <button class="mb g" onclick="sendDM()">Send</button>
+      </div>
+    </div>
+
+    <div class="fr-p" id="fr-online">
+      <div style="font-size:8px;color:#1a3a1a;margin-bottom:8px;">Players online in your connected server</div>
+      <div id="fr-online-list" style="max-height:200px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- ── ACCOUNT ── -->
+  <div class="tp" id="tab-ac" style="width:540px;">
+    <div id="acc-logged-out">
+      <div class="auth-tab">
+        <div class="atb on" onclick="authTab('login',this)">SIGN IN</div>
+        <div class="atb"    onclick="authTab('signup',this)">SIGN UP</div>
+      </div>
+      <div id="auth-login">
+        <input id="auth-username" class="fi" placeholder="Username" spellcheck="false">
+        <input id="auth-password" class="fi" type="password" placeholder="Password">
+        <button class="mb g" style="width:100%;padding:9px;margin-top:4px;" onclick="doLogin()">Sign In</button>
+        <div style="font-size:8px;color:#1a3a1a;margin-top:8px;text-align:center;">
+          Accounts are stored locally in your browser.<br>For cross-device sync, connect a server with account support.
+        </div>
+      </div>
+      <div id="auth-signup" style="display:none;">
+        <input id="su-username" class="fi" placeholder="Choose username" spellcheck="false">
+        <input id="su-email"    class="fi" placeholder="Email (optional, for recovery)" spellcheck="false">
+        <input id="su-password" class="fi" type="password" placeholder="Password (min 6 chars)">
+        <input id="su-confirm"  class="fi" type="password" placeholder="Confirm password">
+        <button class="mb g" style="width:100%;padding:9px;margin-top:4px;" onclick="doSignup()">Create Account</button>
+      </div>
+    </div>
+    <div id="acc-logged-in" style="display:none;">
+      <div class="acc-avatar" id="acc-avatar">👤</div>
+      <div class="acc-name"  id="acc-name-lbl">Player</div>
+      <div class="acc-badge" id="acc-badge">MEMBER</div>
+      <div id="acc-stats"></div>
+      <div class="brow" style="justify-content:center;margin-top:14px;">
+        <button class="mb d" onclick="doLogout()">Sign Out</button>
+        <button class="mb d" onclick="showAccEdit()">Edit Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div class="tp" id="tab-st" style="width:540px;">
+    <div class="sdlbl">PLAYER</div>
+    <div class="srow"><span class="slbl">Username</span><input id="st-uname" class="fi" style="margin:0;flex:1;" placeholder="Player" spellcheck="false"></div>
+    <div class="sdlbl" style="margin-top:6px;">GRAPHICS</div>
+    <div class="srow"><span class="slbl">Render Distance</span><input type="range" min="2" max="6" step="1" id="st-rd" oninput="stCh()" value="3"><span class="sval" id="sv-rd">3</span></div>
+    <div class="srow"><span class="slbl">Field of View</span><input type="range" min="60" max="110" step="5" id="st-fov" oninput="stCh()" value="75"><span class="sval" id="sv-fov">75°</span></div>
+    <div class="srow"><span class="slbl">Mouse Sensitivity</span><input type="range" min="0.3" max="3" step="0.1" id="st-sens" oninput="stCh()" value="1"><span class="sval" id="sv-sens">1.0</span></div>
+    <div class="brow" style="margin-top:8px;"><button class="mb g" onclick="saveST()">Save Settings</button></div>
+  </div>
+
+  <!-- ENGINE TAB (unchanged) -->
+  <div class="tp" id="tab-en" style="width:540px;padding:0;min-height:340px;">
+    <div style="display:flex;height:100%;min-height:340px;">
+      <!-- Left sidebar: sub-tabs -->
+      <div style="width:110px;flex-shrink:0;background:#04080a;border-right:1px solid #0a1a0a;display:flex;flex-direction:column;padding:6px 0;">
+        <div class="en-stab on" id="en-cmd" onclick="enTab('cmd',this)">COMMANDS</div>
+        <div class="en-stab" id="en-scr" onclick="enTab('scr',this)">SCRIPTING</div>
+        <div class="en-stab" id="en-itm" onclick="enTab('itm',this)">ITEMS</div>
+        <div class="en-stab" id="en-prm" onclick="enTab('prm',this)">PERMISSIONS</div>
+        <div class="en-stab" id="en-srv" onclick="enTab('srv',this)">SERVER</div>
+        <div class="en-stab" id="en-blk" onclick="enTab('blk',this)">BLOCKS</div>
+      </div>
+      <!-- Right content area -->
+      <div style="flex:1;overflow-y:auto;padding:12px 14px;">
+
+        <!-- COMMANDS -->
+        <div class="en-panel on" id="enp-cmd">
+          <div class="en-lbl">World Command Console</div>
+          <div style="font-size:8px;color:#1a3a1a;margin-bottom:6px;">Select world, then run commands without entering it</div>
+          <div class="srow" style="margin-bottom:6px;">
+            <span class="slbl" style="width:80px;">World</span>
+            <select id="cmd-world" class="fi" style="margin:0;flex:1;padding:5px;"></select>
+          </div>
+          <div id="cmd-log" style="background:#020604;border:1px solid #0a1a0a;height:120px;overflow-y:auto;padding:6px;font-size:9px;color:#4CAF50;font-family:monospace;margin-bottom:6px;"></div>
+          <div style="display:flex;gap:4px;">
+            <input id="cmd-inp" class="fi" style="margin:0;flex:1;font-size:10px;padding:5px 8px;" placeholder="/fill 0 32 0 10 34 10 stone  |  /setblock 5 35 5 wood  |  /spawn zombie  |  /give grass 10  |  /tp 8 40 8  |  /time day  |  /clear">
+            <button class="mb g" style="padding:5px 10px;white-space:nowrap;" onclick="runCmd()">RUN</button>
+          </div>
+          <div style="margin-top:6px;font-size:8px;color:#1a3a1a;line-height:1.9;">
+            /fill &lt;x1&gt; &lt;y1&gt; &lt;z1&gt; &lt;x2&gt; &lt;y2&gt; &lt;z2&gt; &lt;block&gt; &nbsp;·&nbsp;
+            /setblock &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;block&gt; &nbsp;·&nbsp;
+            /spawn &lt;type&gt; [x y z] &nbsp;·&nbsp;
+            /give &lt;block&gt; [count] &nbsp;·&nbsp;
+            /tp &lt;x&gt; &lt;y&gt; &lt;z&gt; &nbsp;·&nbsp;
+            /time &lt;day|night&gt; &nbsp;·&nbsp;
+            /heal &nbsp;·&nbsp; /kill &nbsp;·&nbsp; /clear
+          </div>
+        </div>
+
+        <!-- SCRIPTING -->
+        <div class="en-panel" id="enp-scr">
+          <div class="en-lbl">World Script Editor</div>
+          <div style="font-size:8px;color:#1a3a1a;margin-bottom:6px;">JavaScript — runs in world context. Use <code style="color:#f57f17">VC.setBlock</code>, <code style="color:#f57f17">VC.getBlock</code>, <code style="color:#f57f17">VC.spawn</code>, <code style="color:#f57f17">VC.give</code>, <code style="color:#f57f17">VC.log</code></div>
+          <textarea id="scr-code" style="width:100%;height:160px;background:#020604;border:1px solid #0a1a0a;color:#a5d6a7;font-family:monospace;font-size:10px;resize:vertical;padding:8px;outline:none;margin-bottom:6px;" spellcheck="false">// Example: build a stone platform
+for(let x=0;x<10;x++){
+  for(let z=0;z<10;z++){
+    VC.setBlock(x, 35, z, 'stone');
+  }
+}
+VC.log('Platform built!');</textarea>
+          <div style="display:flex;gap:4px;margin-bottom:6px;">
+            <button class="mb g" onclick="runScript()">▶ Run Script</button>
+            <button class="mb d" onclick="saveScript()">Save</button>
+            <button class="mb d" onclick="loadScript()">Load</button>
+            <button class="mb r" onclick="clearScriptLog()">Clear Log</button>
+          </div>
+          <div id="scr-log" style="background:#020604;border:1px solid #0a1a0a;height:80px;overflow-y:auto;padding:6px;font-size:9px;color:#4CAF50;font-family:monospace;"></div>
+        </div>
+
+        <!-- ITEMS -->
+        <div class="en-panel" id="enp-itm">
+          <div class="en-lbl">Custom Item Registry</div>
+          <div style="font-size:8px;color:#1a3a1a;margin-bottom:8px;">Define new item types with custom IDs, colors, and properties</div>
+          <div id="custom-item-list" style="margin-bottom:8px;display:flex;flex-direction:column;gap:3px;max-height:120px;overflow-y:auto;"></div>
+          <div class="sdlbl">ADD ITEM</div>
+          <div class="srow"><span class="slbl" style="width:70px;font-size:9px;">ID</span><input id="itm-id" class="fi" style="margin:0;flex:1;" placeholder="myitem" spellcheck="false"></div>
+          <div class="srow"><span class="slbl" style="width:70px;font-size:9px;">Name</span><input id="itm-name" class="fi" style="margin:0;flex:1;" placeholder="My Item" spellcheck="false"></div>
+          <div class="srow">
+            <span class="slbl" style="width:70px;font-size:9px;">Top Color</span><input id="itm-top" type="color" value="#ff6600" style="height:28px;background:#050d05;border:1px solid #0e1e0e;">
+            <span class="slbl" style="width:60px;font-size:9px;">Side</span><input id="itm-side" type="color" value="#cc4400" style="height:28px;background:#050d05;border:1px solid #0e1e0e;">
+          </div>
+          <div class="srow"><span class="slbl" style="width:70px;font-size:9px;">Mass</span><input id="itm-mass" class="fi" style="margin:0;width:60px;" placeholder="1" value="1"></div>
+          <div class="srow"><span class="slbl" style="width:70px;font-size:9px;">Buoyancy</span><input id="itm-buoy" class="fi" style="margin:0;width:60px;" placeholder="0" value="0"></div>
+          <div class="brow"><button class="mb g" onclick="registerCustomItem()">Register Item</button></div>
+        </div>
+
+        <!-- PERMISSIONS -->
+        <div class="en-panel" id="enp-prm">
+          <div class="en-lbl">World Permissions</div>
+          <div style="font-size:8px;color:#1a3a1a;margin-bottom:8px;">Per-world access control for multiplayer</div>
+          <div class="srow" style="margin-bottom:4px;">
+            <span class="slbl" style="width:80px;">World</span>
+            <select id="prm-world" class="fi" style="margin:0;flex:1;padding:5px;"></select>
+          </div>
+          <div class="sdlbl">WORLD FLAGS</div>
+          <div id="perm-flags" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+          <div class="sdlbl">PLAYER LIST</div>
+          <div id="perm-players" style="margin-bottom:6px;max-height:100px;overflow-y:auto;"></div>
+          <div style="display:flex;gap:4px;">
+            <input id="prm-player" class="fi" style="margin:0;flex:1;" placeholder="Username to whitelist/ban" spellcheck="false">
+            <button class="mb g" onclick="permitPlayer()">Allow</button>
+            <button class="mb r" onclick="banPlayer()">Ban</button>
+          </div>
+        </div>
+
+        <!-- SERVER CONTROL -->
+        <div class="en-panel" id="enp-srv">
+          <div class="en-lbl">Server Control Panel</div>
+          <div id="srv-status" style="font-size:9px;color:#2a5a2a;margin-bottom:8px;">No server running</div>
+          <div class="sdlbl">BUILT-IN NODE SERVER (copy & run)</div>
+          <textarea id="srv-code" readonly style="width:100%;height:120px;background:#020604;border:1px solid #0a1a0a;color:#a5d6a7;font-family:monospace;font-size:9px;resize:none;padding:8px;outline:none;margin-bottom:6px;" spellcheck="false"></textarea>
+          <button class="mb d" style="font-size:9px;" onclick="copySrvCode()">Copy Server Code</button>
+          <div class="sdlbl" style="margin-top:8px;">CONNECTED PLAYERS</div>
+          <div id="srv-players" style="font-size:9px;color:#2a5a2a;">Connect to a server first</div>
+          <div class="sdlbl" style="margin-top:8px;">BROADCAST MESSAGE</div>
+          <div style="display:flex;gap:4px;">
+            <input id="srv-msg" class="fi" style="margin:0;flex:1;" placeholder="Server announcement…">
+            <button class="mb g" onclick="srvBroadcast()">Send</button>
+          </div>
+        </div>
+
+        <!-- BLOCK REGISTRY -->
+        <div class="en-panel" id="enp-blk">
+          <div class="en-lbl">Block Registry</div>
+          <div style="font-size:8px;color:#1a3a1a;margin-bottom:8px;">All registered block types (built-in + custom)</div>
+          <div id="blk-list" style="display:flex;flex-direction:column;gap:3px;max-height:260px;overflow-y:auto;"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW WORLD -->
+<div id="nwscr" class="screen" style="display:none">
+  <h2>New World</h2>
+  <input id="nw-name" class="fi" style="width:300px;" placeholder="World Name" maxlength="24" spellcheck="false">
+  <div class="sdlbl" style="width:300px;margin-top:4px;">GAME MODE</div>
+  <div class="tg2" style="width:300px;margin-bottom:12px;">
+    <button class="tgb on" id="mode-survival" onclick="setNewMode('survival')">SURVIVAL</button>
+    <button class="tgb" id="mode-creative" onclick="setNewMode('creative')">CREATIVE</button>
+  </div>
+  <div class="brow"><button class="mb g" onclick="createWorld()">Create</button><button class="mb d" onclick="showMain()">Back</button></div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause" class="screen" style="display:none">
+  <h2>PAUSED</h2>
+  <div class="pause-btns">
+    <button class="mb g" style="padding:9px;" onclick="resumeGame()">Resume</button>
+    <button class="mb d" style="padding:9px;" onclick="backToMenu()">Main Menu</button>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div id="invscr" class="screen" style="display:none">
+  <h3>— INVENTORY —</h3>
+  <div class="inv-lbl">Storage (click to move to hotbar · R = rotate)</div>
+  <div class="igrid" id="inv-main"></div>
+  <div class="inv-lbl" style="margin-top:6px;">Hotbar</div>
+  <div class="igrid" id="inv-hbar"></div>
+  <div class="inv-lbl" style="margin-top:10px;">⚒ Crafting Recipes (drop items on ground near you)</div>
+  <div id="recipe-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:436px;max-height:80px;overflow-y:auto;margin-bottom:6px;"></div>
+  <div class="brow" style="margin-top:6px;"><button class="mb d" onclick="closeInv()">[E] Close</button></div>
+</div>
+
+<!-- IN-GAME ELEMENTS -->
+<div id="crosshair">+</div>
+<div id="uwfx"></div><div id="dmgfx"></div>
+<div id="info"></div><div id="tlabel"></div><div id="msg"></div>
+<div id="wind-hud"></div><div id="weather-hud" style="position:fixed;top:26px;left:50%;transform:translateX(-50%);color:rgba(180,220,255,0.6);font-size:9px;display:none;z-index:15;letter-spacing:2px;"></div><div id="tplbl"></div>
+<div id="craft-hint" style="position:fixed;bottom:136px;left:50%;transform:translateX(-50%);color:rgba(255,220,100,0.75);font-size:9px;display:none;z-index:15;letter-spacing:1px;background:rgba(0,0,0,0.5);padding:3px 12px;"></div>
+<div id="mode-badge" class="survival">SURVIVAL</div>
+<div id="mp-badge"></div><div id="nametag"></div>
+<div id="eff-hud"></div>
+<div id="eng-hud"></div>
+<div id="chat-wrap"></div>
+<div id="chat-inp-w"><input id="chat-inp" placeholder="Chat… Enter send · Esc cancel"></div>
+<div id="plist-ov"><h4>— PLAYERS —</h4><div id="pl-rows"></div></div>
+<div id="keyhints">E Inventory · Q Drop · R Rotate<br>F 3rd Person · T Chat · . Players<br>Creative: Double-Space fly</div>
+<div id="hud"><div id="hearts"></div><div id="hunger-bar" style="display:flex;gap:1px;"></div><div class="hotbar" id="hotbar"></div></div>
+
+<!-- CHEST MODAL -->
+<div id="chest-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:190;display:none;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="font-size:9px;color:#f57f17;letter-spacing:3px;margin-bottom:10px;">CHEST STORAGE</div>
+  <div id="chest-grid" style="display:grid;grid-template-columns:repeat(9,44px);gap:3px;margin-bottom:10px;"></div>
+  <button class="mb d" onclick="closeChest()" style="font-size:11px;padding:7px 20px;">Close [E]</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+  <!-- Game modules — order matters, don't rearrange -->
+  <script src="noise.js"></script>
+  <script src="blocks.js"></script>
+  <script src="settings.js"></script>
+  <script src="save.js"></script>
+  <script src="world.js"></script>
+  <script src="renderer.js"></script>
+  <script src="player-model.js"></script>
+  <script src="drops.js"></script>
+  <script src="physics.js"></script>
+  <script src="tools.js"></script>
+  <script src="hunger.js"></script>
+  <script src="chest.js"></script>
+  <script src="torch.js"></script>
+  <script src="weather.js"></script>
+  <script src="mobs.js"></script>
+  <script src="structures.js"></script>
+  <script src="network.js"></script>
+  <script src="raycast.js"></script>
+  <script src="input.js"></script>
+  <script src="hud.js"></script>
+  <script src="menu.js"></script>
+  <script src="engine-tab.js"></script>
+  <script src="player.js"></script>
+  <script src="loop.js"></script>
+</body>
+</html>
